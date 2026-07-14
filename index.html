@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="manifest" href="./manifest.json">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CoasterCalculator</title>
+    <style>
+        :root {
+            --bg-main: #121212;
+            --bg-card: #1e1e1e;
+            --border-color: #2c2c2c;
+            --text-main: #ffffff;
+            --text-muted: #aaaaaa;
+            --text-dimmed: #444444;
+            --delay-red: #ff3b30;
+            --ontime-green: #34c759;
+            --primary-blue: #007bff;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 650px;
+            margin: 0 auto;
+        }
+
+        .planner-container {
+            background-color: var(--bg-card);
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 25px;
+        }
+
+        .inputs-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .input-row .input-group {
+            flex: 1;
+        }
+
+        .input-group label,
+        .results-title,
+        .results-per-train-label,
+        .sheet-header {
+            font-size: 13px;
+            color: var(--text-muted);
+            font-weight: normal;
+            letter-spacing: normal;
+        }
+
+        .input-group label {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .planner-input {
+            background-color: var(--bg-main);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 12px;
+            color: var(--text-main);
+            font-size: 15px;
+            outline: none;
+            -moz-appearance: textfield;
+            box-sizing: border-box;
+            width: 100%;
+            height: 46px;
+        }
+
+        .planner-input:disabled {
+            background-color: #181818;
+            color: #777;
+            border-color: #222;
+        }
+
+        .planner-input::-webkit-outer-spin-button,
+        .planner-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .planner-input:focus {
+            border-color: #555;
+        }
+
+        .timer-container-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            width: 100%;
+            height: 46px;
+            box-sizing: border-box;
+        }
+
+        .timer-input-wrapper {
+            position: relative;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            height: 46px;
+            box-sizing: border-box;
+        }
+
+        .timer-input-wrapper input {
+            text-align: left;
+            padding-right: 25px;
+            font-weight: bold;
+            height: 46px;
+            box-sizing: border-box;
+        }
+
+        .timer-input-wrapper::after {
+            content: 's';
+            position: absolute;
+            right: 14px;
+            color: var(--text-muted);
+            font-size: 15px;
+            font-weight: bold;
+            pointer-events: none;
+        }
+
+        .btn {
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 0 12px;
+            border-radius: 4px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s, border-color 0.2s;
+            box-sizing: border-box;
+            height: 46px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .btn:disabled {
+            background-color: #1a1a1a;
+            border-color: #222;
+            color: #444;
+            cursor: not-allowed;
+        }
+
+        .btn-start {
+            background-color: #1e3d24;
+            border-color: var(--ontime-green);
+            color: var(--ontime-green);
+        }
+        .btn-start:hover:not(:disabled) {
+            background-color: #274e2e;
+        }
+
+        .btn-action-red {
+            background-color: #3a1d1d;
+            border-color: var(--delay-red);
+            color: var(--delay-red);
+        }
+        .btn-action-red:hover:not(:disabled) {
+            background-color: #4c2626;
+        }
+
+        .btn-primary {
+            background-color: #252525;
+            border-color: #444;
+            margin-top: 8px;
+        }
+        .btn-primary:hover:not(:disabled) {
+            background-color: #333;
+        }
+
+        .btn-lock {
+            background-color: #0d2a4a;
+            border-color: var(--primary-blue);
+            color: #fff;
+        }
+        .btn-lock:hover {
+            background-color: #143f6d;
+        }
+
+        .btn-unlock {
+            background-color: #3a2a0d;
+            border-color: #ff9500;
+            color: #ff9500;
+        }
+        .btn-unlock:hover {
+            background-color: #4e3914;
+        }
+
+        .btn-timer {
+            flex: 1;
+        }
+
+        .results-box {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin-top: 25px;
+        }
+
+        .results-title {
+            margin-bottom: 8px;
+        }
+
+        .results-display-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .results-value {
+            font-size: 52px;
+            line-height: 1;
+            font-weight: 700;
+            color: var(--text-main);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .results-per-train-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
+
+        .results-per-train-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--text-muted);
+            font-variant-numeric: tabular-nums;
+            line-height: 1;
+        }
+
+        .results-per-train-label {
+            margin-top: 4px;
+            line-height: 1;
+        }
+
+        .splits-box {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 20px;
+        }
+
+        .sheet-header, .sheet-row {
+            display: flex;
+            align-items: center;
+            padding: 10px 4px;
+            border-bottom: 1px solid #222;
+        }
+
+        .sheet-header {
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .sheet-row {
+            font-size: 14px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .col-cycle {
+            width: 70px;
+            flex-shrink: 0;
+        }
+        .col-trains {
+            width: 80px;
+            flex-shrink: 0;
+        }
+        .col-duration {
+            width: 100px;
+            flex-shrink: 0;
+        }
+        .col-pph {
+            flex-grow: 1;
+        }
+        .col-trend {
+            width: 40px;
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        .splits-list-wrapper {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .splits-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .trend-up { color: var(--ontime-green); }
+        .trend-steady { color: var(--primary-blue); }
+        .trend-down { color: var(--delay-red); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <div class="planner-container">
+        <div class="inputs-stack">
+
+            <div class="input-row">
+                <div class="input-group">
+                    <label for="inputCars">Cars per train</label>
+                    <input type="number" id="inputCars" class="planner-input" inputmode="numeric" oninput="autoCalculatePassengers()">
+                </div>
+                <div class="input-group">
+                    <label for="inputRows">Passengers per car</label>
+                    <input type="number" id="inputRows" class="planner-input" inputmode="numeric" oninput="autoCalculatePassengers()">
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label for="inputC">Passengers per train</label>
+                <input type="number" id="inputC" class="planner-input" inputmode="numeric" oninput="clearCarsAndRows()">
+            </div>
+
+            <div>
+                <button id="lockBtn" class="btn btn-lock" onclick="toggleLock()">Lock</button>
+            </div>
+
+            <div class="input-group">
+                <label for="inputT">Amount of trains</label>
+                <input type="number" id="inputT" class="planner-input" inputmode="numeric">
+            </div>
+
+            <div class="input-group">
+                <label>Duration</label>
+                <div class="timer-container-row">
+                    <button id="startBtn" class="btn btn-timer btn-start" onclick="startTimer()" disabled>Start</button>
+
+                    <div class="timer-input-wrapper">
+                        <input type="number" id="timerDisplay" class="planner-input" value="0" inputmode="numeric" oninput="manualSecondsInput()" disabled>
+                    </div>
+
+                    <button id="actionBtn" class="btn btn-timer btn-action-red" onclick="handleActionClick()" disabled>Reset</button>
+                </div>
+            </div>
+        </div>
+
+        <button id="calcBtn" class="btn btn-primary" onclick="calculateCapacity()" disabled>Calculate</button>
+    </div>
+
+    <div class="results-box">
+        <div class="results-title">Passengers per hour this cycle</div>
+        <div class="results-display-wrapper">
+            <div id="resultDisplay" class="results-value">0</div>
+
+            <div id="perTrainContainer" class="results-per-train-box" style="display: none;">
+                <div id="perTrainDisplay" class="results-per-train-value">~0</div>
+                <div class="results-per-train-label">per train</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="splits-box">
+        <div class="sheet-header">
+            <div class="col-cycle">Cycle</div>
+            <div class="col-trains">Trains</div>
+            <div class="col-duration">Duration</div>
+            <div class="col-pph">Passengers per hour</div>
+            <div class="col-trend"></div>
+        </div>
+
+        <div class="splits-list-wrapper">
+            <ul id="splitsList" class="splits-list">
+                <li style="color: var(--text-dimmed); justify-content: center; padding: 16px 0;" id="noSplitsMsg">No cycles recorded yet.</li>
+            </ul>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    let timerInterval = null;
+    let startTime = 0;
+    let elapsedTime = 0;
+    let isRunning = false;
+    let measuredSeconds = 0;
+
+    let currentCycle = 1;
+    let lastPPH = null;
+    let isLocked = false;
+
+    window.onload = function() {
+        elapsedTime = 0;
+        measuredSeconds = 0;
+        document.getElementById('timerDisplay').value = '0';
+
+        document.getElementById('startBtn').disabled = true;
+        document.getElementById('timerDisplay').disabled = true;
+        document.getElementById('actionBtn').disabled = true;
+        document.getElementById('calcBtn').disabled = true;
+    };
+
+    function autoCalculatePassengers() {
+        if (isLocked) return;
+        const cars = parseFloat(document.getElementById('inputCars').value);
+        const rows = parseFloat(document.getElementById('inputRows').value);
+        if (!isNaN(cars) && !isNaN(rows)) {
+            document.getElementById('inputC').value = cars * rows;
+        }
+    }
+
+    function clearCarsAndRows() {
+        if (isLocked) return;
+        document.getElementById('inputCars').value = '';
+        document.getElementById('inputRows').value = '';
+    }
+
+    function toggleLock() {
+        const lockBtn = document.getElementById('lockBtn');
+        const inputs = ['inputCars', 'inputRows', 'inputC'];
+        const actionElements = ['startBtn', 'timerDisplay', 'actionBtn', 'calcBtn'];
+
+        if (!isLocked) {
+            const C = parseFloat(document.getElementById('inputC').value);
+            const T = parseFloat(document.getElementById('inputT').value);
+            if (isNaN(C) || isNaN(T) || T <= 0) {
+                alert("Data is missing, or has not been entered correctly.");
+                return;
+            }
+
+            isLocked = true;
+            lockBtn.innerText = "Unlock";
+            lockBtn.className = "btn btn-unlock";
+
+            inputs.forEach(id => document.getElementById(id).disabled = true);
+            actionElements.forEach(id => document.getElementById(id).disabled = false);
+        } else {
+            isLocked = false;
+            lockBtn.innerText = "Lock";
+            lockBtn.className = "btn btn-lock";
+
+            if (isRunning) handleActionClick();
+
+            inputs.forEach(id => {
+                document.getElementById(id).disabled = false;
+            });
+
+            actionElements.forEach(id => document.getElementById(id).disabled = true);
+
+            elapsedTime = 0;
+            measuredSeconds = 0;
+            document.getElementById('timerDisplay').value = '0';
+            document.getElementById('resultDisplay').innerText = '0';
+            document.getElementById('perTrainContainer').style.display = 'none';
+
+            clearAllData();
+        }
+    }
+
+    function manualSecondsInput() {
+        const value = parseFloat(document.getElementById('timerDisplay').value);
+        measuredSeconds = !isNaN(value) ? value : 0;
+        elapsedTime = measuredSeconds * 1000;
+    }
+
+    function startTimer() {
+        if (!isRunning && isLocked) {
+            isRunning = true;
+            document.getElementById('actionBtn').innerText = 'Stop';
+            startTime = performance.now() - elapsedTime;
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+    }
+
+    function handleActionClick() {
+        const actionBtn = document.getElementById('actionBtn');
+        if (isRunning) {
+            isRunning = false;
+            clearInterval(timerInterval);
+            measuredSeconds = Math.round(elapsedTime / 1000);
+            actionBtn.innerText = 'Reset';
+        } else {
+            elapsedTime = 0;
+            measuredSeconds = 0;
+            document.getElementById('timerDisplay').value = '0';
+        }
+    }
+
+    function updateTimer() {
+        elapsedTime = performance.now() - startTime;
+        measuredSeconds = Math.round(elapsedTime / 1000);
+        document.getElementById('timerDisplay').value = measuredSeconds;
+    }
+
+    function calculateCapacity() {
+        const C = parseFloat(document.getElementById('inputC').value);
+        const T = parseFloat(document.getElementById('inputT').value);
+        const D = measuredSeconds;
+        const resultDisplay = document.getElementById('resultDisplay');
+        const perTrainContainer = document.getElementById('perTrainContainer');
+        const perTrainDisplay = document.getElementById('perTrainDisplay');
+
+        if (!isNaN(C) && !isNaN(T) && D > 0) {
+            let totalPPH = Math.floor(((C * T) / D) * 3600);
+            resultDisplay.innerText = totalPPH.toString();
+
+            if (T > 1) {
+                let avgPerTrain = Math.floor(totalPPH / T);
+                perTrainDisplay.innerText = `~${avgPerTrain}`;
+                perTrainContainer.style.display = 'flex';
+            } else {
+                perTrainContainer.style.display = 'none';
+            }
+
+            addCycleToSheet(D, totalPPH, T);
+            currentCycle++;
+        } else {
+            resultDisplay.innerText = "0";
+            perTrainContainer.style.display = 'none';
+        }
+    }
+
+    function addCycleToSheet(duration, totalPPH, trainsCount) {
+        const noSplitsMsg = document.getElementById('noSplitsMsg');
+        if (noSplitsMsg) noSplitsMsg.remove();
+
+        let indicator = "";
+
+        if (lastPPH === null) {
+            indicator = '';
+        } else if (totalPPH > lastPPH) {
+            indicator = '<span class="trend-up">▲</span>';
+        } else if (totalPPH < lastPPH) {
+            indicator = '<span class="trend-down">▼</span>';
+        } else {
+            indicator = '<span class="trend-steady">■</span>';
+        }
+        lastPPH = totalPPH;
+
+        const splitsList = document.getElementById('splitsList');
+        const li = document.createElement('li');
+        li.className = 'sheet-row';
+
+        li.innerHTML = `
+            <div class="col-cycle">${currentCycle}</div>
+            <div class="col-trains">${trainsCount}</div>
+            <div class="col-duration">${duration}s</div>
+            <div class="col-pph">${totalPPH}</div>
+            <div class="col-trend">${indicator}</div>
+        `;
+
+        splitsList.insertBefore(li, splitsList.firstChild);
+    }
+
+    function clearAllData() {
+        const splitsList = document.getElementById('splitsList');
+        splitsList.innerHTML = '<li style="color: var(--text-dimmed); justify-content: center; padding: 16px 0;" id="noSplitsMsg">No cycles recorded yet.</li>';
+        lastPPH = null;
+        currentCycle = 1;
+    }
+
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js').catch(err => {
+                console.log('PWA ServiceWorker actief.', err);
+            });
+        });
+    }
+</script>
+
+</body>
+</html>
